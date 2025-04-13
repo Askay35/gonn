@@ -26,5 +26,17 @@ delta_hidden.MulElem(delta_hidden, hiddens_derivative)
 
 inputs_adj.Scale(-learn_rate, delta_hidden)
 input_hidden_bias.Add(input_hidden_bias, &inputs_adj)
-inputs_adj.Mul(&inputs_adj, inputs.T())           
+inputs_adj.Mul(inputs.T(), &inputs_adj)           
 input_hidden_weights.Add(input_hidden_weights, &inputs_adj)         
+
+Для обновления весов между входным и скрытым слоем нужно:
+
+Δinput_hidden_weights = xᵀ × δ_hidden
+
+Где:
+
+    xᵀ: 3×1 (транспонированный вход)
+
+    δ_hidden: 1×3 (ошибка скрытого слоя)
+
+    Результат: 3×3 (размер весовой матрицы)
