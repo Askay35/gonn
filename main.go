@@ -11,8 +11,8 @@ const (
 	HIDDEN_NEURONS = 3
 	HIDDEN_LAYERS  = 1
 	OUTPUTS        = 2
-	LEARNING_RATE  = 0.1
-	EPOCHS         = 100
+	LEARNING_RATE  = 0.5
+	EPOCHS         = 500
 )
 
 var input_hidden_weights, hidden_output_weights, inputs_adj, hiddens_adj, hiddens_derivative, hiddens_pre, outputs_pre, hiddens, outputs, delta_output, delta_hidden mat.Dense
@@ -45,7 +45,7 @@ func main() {
 	resetData()
 
 	for epoch := 0; epoch < EPOCHS; epoch++ {
-		fmt.Println("epoch: ", epoch+1)
+		// fmt.Printf("epoch: %v\n", epoch+1)
 
 		for input_index, input := range train_inputs {
 
@@ -71,21 +71,21 @@ func main() {
 			train_output := mat.NewDense(1, OUTPUTS, train_outputs[input_index])
 
 			if train_output.At(0, 0) == 0 {
-				fmt.Println("right output: 1")
+				fmt.Print("right output: 1\n")
 			} else {
-				fmt.Println("right output: 0")
+				fmt.Print("right output: 0\n")
 			}
 
-			fmt.Println("output: ", getAnswer(&outputs))
+			fmt.Printf("output: %v\n", getAnswer(&outputs))
 
 			// cost / error
-			e := crossEntropy(train_output, &outputs)
-			fmt.Println("error: ", e)
+			// e := crossEntropy(train_output, &outputs)
+			// fmt.Printf("error: %v\n\n", e)
 
 			// back propogation
 
 			delta_output.Sub(&outputs, train_output)
-			hiddens_adj = *manualMultiply(mat.DenseCopyOf(hiddens.T()), &delta_output)
+			hiddens_adj = *multiplyMatrix(mat.DenseCopyOf(hiddens.T()), &delta_output)
 			hiddens_adj.Scale(-LEARNING_RATE, &hiddens_adj)
 
 			hidden_output_weights.Add(&hidden_output_weights, hiddens_adj.T())
@@ -113,24 +113,8 @@ func main() {
 
 			hiddens_adj.Reset()
 			inputs_adj.Reset()
-			fmt.Println()
-
 		}
 
 	}
 
-}
-
-// Вспомогательная функция для печати матриц
-func matPrint(X interface{}) {
-	var f fmt.Formatter
-	switch X.(type) {
-	case *mat.Dense:
-		f = mat.Formatted(X.(*mat.Dense), mat.Prefix(""), mat.Squeeze())
-	case mat.Dense:
-		f = mat.Formatted(X.(mat.Matrix))
-	default:
-		f = mat.Formatted(mat.DenseCopyOf(X.(mat.Matrix)), mat.Prefix(""), mat.Squeeze())
-	}
-	fmt.Printf("%v\n", f)
 }
