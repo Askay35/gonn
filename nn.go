@@ -1,16 +1,59 @@
 package main
 
 import (
+	"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/mat"
 )
 
-func getAnswer(o *mat.Dense) int {
-	if o.At(0, 0) > o.At(0, 1) {
-		return 0
+func printMNIST(data []float64) {
+	if len(data) != 28*28 {
+		panic("Длина массива должна быть 784 байта (28x28)")
 	}
-	return 1
+
+	// Градации серого в ASCII (от темного к светлому)
+	gradient := []string{" ", "░", "▒", "▓", "█"}
+
+	for y := 0; y < 28; y++ {
+		for x := 0; x < 28; x++ {
+			// Нормализуем значение от 0 до 255
+
+			val := 255 - data[y*28+x]
+			if val < 0 {
+				val = 0
+			}
+			if val > 255 {
+				val = 255
+			}
+
+			// Выбираем символ из градиента
+			index := int(math.Round(val / 255 * float64(len(gradient)-1)))
+			fmt.Print(gradient[index])
+		}
+		fmt.Print("\n")
+	}
+}
+
+func getNetworkAnswer(output *mat.Dense) (int, error) {
+	rows, cols := output.Dims()
+	if rows != 1 {
+		return 0, fmt.Errorf("Output matrix must have exactly 1 row to get answer")
+	}
+
+	matData := output.RawMatrix().Data
+
+	maxValue := matData[0]
+	maxIndex := 0
+
+	for j := 1; j < cols; j++ {
+		if matData[j] > maxValue {
+			maxValue = matData[j]
+			maxIndex = j
+		}
+	}
+
+	return maxIndex, nil
 }
 
 func softmax(m *mat.Dense) *mat.Dense {

@@ -1,6 +1,8 @@
 package main
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"gonum.org/v1/gonum/mat"
+)
 
 func randomDense(r, c int, min, max float64) *mat.Dense {
 	dense := mat.NewDense(r, c, nil)
