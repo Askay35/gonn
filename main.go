@@ -82,8 +82,6 @@ func main() {
 				fmt.Printf("EPOCH: %v\n", epoch+1)
 			}
 
-			// back propogation
-
 			delta_output.Sub(&outputs, train_output)
 			hiddens_adj = *multiplyMatrix(mat.DenseCopyOf(hiddens.T()), &delta_output)
 			hiddens_adj.Scale(-LEARNING_RATE, &hiddens_adj)

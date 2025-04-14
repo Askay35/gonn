@@ -9,15 +9,13 @@ import (
 
 func printMNIST(data []float64) {
 	if len(data) != 28*28 {
-		panic("Длина массива должна быть 784 байта (28x28)")
+		panic("Array length should be 784 bytes (28x28)")
 	}
 
-	// Градации серого в ASCII (от темного к светлому)
 	gradient := []string{" ", "░", "▒", "▓", "█"}
 
 	for y := 0; y < 28; y++ {
 		for x := 0; x < 28; x++ {
-			// Нормализуем значение от 0 до 255
 
 			val := 255 - data[y*28+x]
 			if val < 0 {
@@ -27,7 +25,6 @@ func printMNIST(data []float64) {
 				val = 255
 			}
 
-			// Выбираем символ из градиента
 			index := int(math.Round(val / 255 * float64(len(gradient)-1)))
 			fmt.Print(gradient[index])
 		}
@@ -83,8 +80,6 @@ func softmaxDerivative(t *mat.Dense, m *mat.Dense) *mat.Dense {
 	return &result
 }
 
-// t - true values - правильные значение one-hot (1, 0, 0)...
-// p - probs 	   - вероятности
 func crossEntropy(t *mat.Dense, p *mat.Dense) float64 {
 	r, c := p.Dims()
 	result := 0.0
@@ -102,7 +97,6 @@ func sigmoid(m *mat.Dense) *mat.Dense {
 	r, c := m.Dims()
 	result := mat.NewDense(r, c, nil)
 	result.Apply(func(i, j int, v float64) float64 {
-		// Для численной стабильности (предотвращение переполнения)
 		if v > 0 {
 			return 1 / (1 + math.Exp(-v))
 		}
