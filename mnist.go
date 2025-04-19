@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
+	"math"
 	"os"
 )
 
@@ -100,5 +102,33 @@ func readMNISTData(images_path, labels_path string) (MNISTData, error) {
 	data.pixels = pixels
 	data.labels = labels
 
+	fmt.Printf("Loaded %d images. Size %dx%d\n", data.images_number, IMAGE_WIDTH, IMAGE_HEIGHT)
+	fmt.Printf("Loaded %d labels\n", len(data.labels))
+
 	return data, nil
+}
+
+func printMNIST(data []float64) {
+	if len(data) != 28*28 {
+		panic("Array length should be 784 bytes (28x28)")
+	}
+
+	gradient := []string{" ", "░", "▒", "▓", "█"}
+
+	for y := 0; y < 28; y++ {
+		for x := 0; x < 28; x++ {
+
+			val := 255 - data[y*28+x]
+			if val < 0 {
+				val = 0
+			}
+			if val > 255 {
+				val = 255
+			}
+
+			index := int(math.Round(val / 255 * float64(len(gradient)-1)))
+			fmt.Print(gradient[index])
+		}
+		fmt.Print("\n")
+	}
 }

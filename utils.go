@@ -2,6 +2,9 @@ package main
 
 import (
 	"math/rand"
+	"os"
+	"os/exec"
+	"runtime"
 )
 
 func randFloat64(min, max float64) float64 {
@@ -14,6 +17,20 @@ func bytesToFloats(data []byte) []float64 {
 	}
 	return floats
 }
+func clearConsole() {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "linux", "darwin":
+		cmd = exec.Command("clear")
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "cls")
+	default:
+		return
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
+
 func labelsToOuputs(labels []byte, size int) []float64 {
 	var outputs []float64
 	for _, b := range labels {
