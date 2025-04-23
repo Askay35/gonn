@@ -3,16 +3,17 @@ package main
 import (
 	"fmt"
 
+	nmath "github.com/Askay35/gonn/math"
 	"gonum.org/v1/gonum/mat"
 )
 
 const (
-	INPUTS         = 784
-	HIDDEN_NEURONS = 100
-	HIDDEN_LAYERS  = 2
-	OUTPUTS        = 10
+	INPUTS         = 784 //28x28 mnist image size
+	HIDDEN_NEURONS = 50
+	HIDDEN_LAYERS  = 1
+	OUTPUTS        = 10 // 10 digits - 0-9
 	LEARNING_RATE  = 0.01
-	EPOCHS         = 500
+	EPOCHS         = 1
 )
 
 type Layer struct {
@@ -25,22 +26,24 @@ func (l *Layer) forward(input *mat.Dense) *mat.Dense {
 	l.Input = input
 
 	if input.RawMatrix().Cols == l.Weights.RawMatrix().Rows {
-		l.Z = multiplyMatrix(input, l.Weights)
+		l.Z = nmath.MultiplyMatrix(input, l.Weights)
 	} else {
-		l.Z = multiplyMatrix(input, mat.DenseCopyOf(l.Weights.T()))
+		l.Z = nmath.MultiplyMatrix(input, mat.DenseCopyOf(l.Weights.T()))
 	}
 
 	if l.Z.RawMatrix().Rows == l.Bias.RawMatrix().Rows && l.Z.RawMatrix().Cols == l.Bias.RawMatrix().Cols {
 		l.Z.Add(l.Z, l.Bias)
 	} else {
-		l.Z = addVectorToMatrix(mat.DenseCopyOf(l.Z.T()), l.Bias)
+		l.Z = nmath.AddVectorToMatrix(mat.DenseCopyOf(l.Z.T()), l.Bias)
 	}
 
 	switch l.Activation {
 	case "sigmoid":
-		l.Output = sigmoid(l.Z)
+		l.Output = nmath.Sigmoid(l.Z)
 	case "softmax":
-		l.Output = softmax(l.Z)
+		l.Output = nmath.Softmax(l.Z)
+	case "relu":
+		l.Output = nmath.Relu(l.Z)
 	default:
 		l.Output = mat.DenseCopyOf(l.Z)
 	}
@@ -52,7 +55,7 @@ type Network struct {
 	Layers []Layer
 }
 
-func (n *Network) forward(input *mat.Dense) *mat.Dense {
+func (n *Network) Forward(input *mat.Dense) *mat.Dense {
 	var output *mat.Dense
 	for index := range n.Layers {
 		if index == 0 {
@@ -63,67 +66,69 @@ func (n *Network) forward(input *mat.Dense) *mat.Dense {
 	}
 	return output
 }
-func (n *Network) backpropogation(true_output *mat.Dense) {
+func (n *Network) Backpropogation(true_output *mat.Dense) {
 	var delta, adj, temp mat.Dense
 
 	for i := len(n.Layers) - 1; i >= 0; i-- {
 		layer := n.Layers[i]
 		switch layer.Activation {
 		case "softmax":
+
 			output_layer := n.Layers[len(n.Layers)-1]
 			delta.Sub(output_layer.Output, true_output)
-			adj = *multiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
+			adj = *nmath.MultiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
 			adj.Scale(-LEARNING_RATE, &adj)
 			temp.Scale(-LEARNING_RATE, &delta)
 			layer.Weights.Add(layer.Weights, &adj)
 			if layer.Bias.RawMatrix().Rows == temp.RawMatrix().Rows {
 				layer.Bias.Add(&temp, layer.Bias)
 			} else {
-				layer.Bias = addVectorToMatrix(&temp, layer.Bias)
+				layer.Bias = nmath.AddVectorToMatrix(&temp, layer.Bias)
 			}
+
 		case "sigmoid":
-			derivative := sigmoidDerivative(layer.Output)
+
+			derivative := nmath.SigmoidDerivative(layer.Output)
 			if i == len(n.Layers)-1 {
 				delta.Sub(layer.Output, true_output)
-				delta.MulElem(&delta, derivative)
 			} else {
-				delta = *multiplyMatrix(&delta, mat.DenseCopyOf(n.Layers[i+1].Weights.T())) // delta [batch × next_size] × weightsT [next_size × current_size] → [batch × current_size]
-				delta.MulElem(&delta, derivative)
+				delta = *nmath.MultiplyMatrix(&delta, mat.DenseCopyOf(n.Layers[i+1].Weights.T())) // delta [batch × next_size] × weightsT [next_size × current_size] → [batch × current_size]
 			}
-			adj = *multiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
+			delta.MulElem(&delta, derivative)
+			adj = *nmath.MultiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
 			adj.Scale(-LEARNING_RATE, &adj)
 			layer.Weights.Add(layer.Weights, &adj)
 
 			if layer.Bias.RawMatrix().Rows == adj.RawMatrix().Rows {
 				layer.Bias.Add(&adj, layer.Bias)
 			} else {
-				layer.Bias = addVectorToMatrix(&adj, layer.Bias)
+				layer.Bias = nmath.AddVectorToMatrix(&adj, layer.Bias)
 			}
 
 			// case "relu":
-			// 	derivative := sigmoidDerivative(layer.Output)
+			// 	derivative := nmath.SigmoidDerivative(layer.Output)
 			// 	if i == len(n.Layers)-1 {
 			// 		delta.Sub(layer.Output, true_output)
 			// 		delta.MulElem(&delta, derivative)
 			// 	} else {
-			// 		delta = *multiplyMatrix(&delta, mat.DenseCopyOf(n.Layers[i+1].Weights.T())) // delta [batch × next_size] × weightsT [next_size × current_size] → [batch × current_size]
+			// 		delta = *nmath.MultiplyMatrix(&delta, mat.DenseCopyOf(n.Layers[i+1].Weights.T())) // delta [batch × next_size] × weightsT [next_size × current_size] → [batch × current_size]
 			// 		delta.MulElem(&delta, derivative)
 			// 	}
-			// 	adj = *multiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
+			// 	adj = *nmath.MultiplyMatrix(mat.DenseCopyOf(layer.Input.T()), &delta)
 			// 	adj.Scale(-LEARNING_RATE, &adj)
 			// 	layer.Weights.Add(layer.Weights, &adj)
 
 			// 	if layer.Bias.RawMatrix().Rows == adj.RawMatrix().Rows {
 			// 		layer.Bias.Add(&adj, layer.Bias)
 			// 	} else {
-			// 		layer.Bias = addVectorToMatrix(&adj, layer.Bias)
+			// 		layer.Bias = nmath.AddVectorToMatrix(&adj, layer.Bias)
 			// 	}
 		}
 
 	}
 }
 
-func getNetworkAnswer(output *mat.Dense) (byte, error) {
+func GetNetworkAnswer(output *mat.Dense) (byte, error) {
 	rows, cols := output.Dims()
 	if rows != 1 {
 		return 0, fmt.Errorf("output matrix must have exactly 1 row to get answer")
